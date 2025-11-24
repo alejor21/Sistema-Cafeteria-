@@ -37,6 +37,7 @@ export const Navbar = () => {
         </Link>
 
         <div className="navbar-links">
+          {/* Pedidos: todos pueden verlos */}
           <Link
             to="/orders"
             className={`nav-link ${isActive('/orders') ? 'active' : ''}`}
@@ -45,32 +46,37 @@ export const Navbar = () => {
             <span>Pedidos</span>
           </Link>
 
-          {isAdmin() && (
-            <>
-              <Link
-                to="/products"
-                className={`nav-link ${isActive('/products') ? 'active' : ''}`}
-              >
-                <span className="nav-icon">🍽️</span>
-                <span>Productos</span>
-              </Link>
+          {/* Productos: solo ADMIN puede gestionar */}
+          {user?.role === 'ADMIN' && (
+            <Link
+              to="/products"
+              className={`nav-link ${isActive('/products') ? 'active' : ''}`}
+            >
+              <span className="nav-icon">🍽️</span>
+              <span>Productos</span>
+            </Link>
+          )}
 
-              <Link
-                to="/users"
-                className={`nav-link ${isActive('/users') ? 'active' : ''}`}
-              >
-                <span className="nav-icon">👥</span>
-                <span>Usuarios</span>
-              </Link>
+          {/* Usuarios: solo ADMIN */}
+          {user?.role === 'ADMIN' && (
+            <Link
+              to="/users"
+              className={`nav-link ${isActive('/users') ? 'active' : ''}`}
+            >
+              <span className="nav-icon">👥</span>
+              <span>Usuarios</span>
+            </Link>
+          )}
 
-              <Link
-                to="/reports"
-                className={`nav-link ${isActive('/reports') ? 'active' : ''}`}
-              >
-                <span className="nav-icon">📊</span>
-                <span>Reportes</span>
-              </Link>
-            </>
+          {/* Reportes: ADMIN y EMPLOYEE */}
+          {(user?.role === 'ADMIN' || user?.role === 'EMPLOYEE') && (
+            <Link
+              to="/reports"
+              className={`nav-link ${isActive('/reports') ? 'active' : ''}`}
+            >
+              <span className="nav-icon">📊</span>
+              <span>Reportes</span>
+            </Link>
           )}
         </div>
 

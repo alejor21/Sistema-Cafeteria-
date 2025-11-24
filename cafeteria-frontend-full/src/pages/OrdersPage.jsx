@@ -194,10 +194,23 @@ export const OrdersPage = () => {
     return PAYMENT_METHODS.find(m => m.value === method) || PAYMENT_METHODS[0]
   }
 
+  // Determinar si el usuario puede gestionar pedidos (cambiar estados)
+  const canManageOrders = user?.role === 'ADMIN' || user?.role === 'EMPLOYEE'
+  
+  // Determinar si es cliente (estudiante o personal)
+  const isCustomer = user?.role === 'STUDENT' || user?.role === 'STAFF'
+
+  // Filtrar pedidos según el rol
+  const displayOrders = isCustomer 
+    ? orders.filter(order => order.customerId === user?.id)
+    : orders
+
   return (
     <section className="section">
       <div className="page-header">
-        <h1 className="page-title">🛍️ Gestión de Pedidos</h1>
+        <h1 className="page-title">
+          {canManageOrders ? '🛍️ Gestión de Pedidos' : '🛍️ Mis Pedidos'}
+        </h1>
         <p className="page-description">Crea y administra los pedidos de tus clientes</p>
       </div>
 
@@ -209,12 +222,16 @@ export const OrdersPage = () => {
         >
           📋 Lista de Pedidos
         </button>
-        <button
-          className={`button ${view === 'create' ? 'primary' : 'secondary'}`}
-          onClick={() => setView('create')}
-        >
-          ➕ Crear Nuevo Pedido
-        </button>
+        
+        {/* Solo clientes (STUDENT/STAFF) pueden crear pedidos */}
+        {isCustomer && (
+          <button
+            className={`button ${view === 'create' ? 'primary' : 'secondary'}`}
+            onClick={() => setView('create')}
+          >
+            ➕ Crear Nuevo Pedido
+          </button>
+        )}
       </div>
 
       {error && <ErrorMessage message={error} onClose={() => setError('')} />}
@@ -418,19 +435,23 @@ export const OrdersPage = () => {
             </button>
           </div>
 
-          {loading && orders.length === 0 && <LoadingSpinner />}
+          {loading && displayOrders.length === 0 && <LoadingSpinner />}
 
-          {!loading && orders.length === 0 && (
+          {!loading && displayOrders.length === 0 && (
             <div className="empty-state">
               <div className="empty-icon">📝</div>
-              <p className="empty-text">No hay pedidos registrados</p>
-              <p className="empty-hint">Crea tu primer pedido usando el botón de arriba</p>
+              <p className="empty-text">
+                {isCustomer ? 'No tienes pedidos activos' : 'No hay pedidos registrados'}
+              </p>
+              <p className="empty-hint">
+                {isCustomer && 'Crea tu primer pedido usando el botón de arriba'}
+              </p>
             </div>
           )}
 
-          {orders.length > 0 && (
+          {displayOrders.length > 0 && (
             <div className="orders-list">
-              {orders.map(order => {
+              {displayOrders.map(order => {
                 const statusData = getStatusData(order.status)
                 const paymentData = getPaymentMethodData(order.paymentMethod)
                 const canAdvance = statusData.nextStatus !== null
@@ -509,7 +530,8 @@ export const OrdersPage = () => {
                         👁️ Ver Detalle
                       </button>
                       
-                      {canAdvance && (
+                      {/* Solo ADMIN/EMPLOYEE pueden gestionar estados */}
+                      {canManageOrders && canAdvance && (
                         <button
                           className="button small primary"
                           onClick={() => handleUpdateStatus(order.id, order.status)}
@@ -519,9 +541,17 @@ export const OrdersPage = () => {
                         </button>
                       )}
 
-                      {order.status === 'READY' && (
-                        <div className="ready-indicator">
-                          ✅ Listo para recoger
+                      {/* Notificación para clientes cuando está listo */}
+                      {isCustomer && order.status === 'READY' && (
+                        <div className="ready-indicator" style={{ 
+                          animation: 'pulse 2s infinite',
+                          backgroundColor: '#10b981',
+                          color: 'white',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          fontWeight: 'bold'
+                        }}>
+                          🔔 ¡Tu pedido está listo! Recógelo en ventanilla
                         </div>
                       )}
 
