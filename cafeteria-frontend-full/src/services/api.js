@@ -49,6 +49,7 @@ export const ordersAPI = {
   update: (id, orderData) => api.put(`/orders/${id}`, orderData),
   delete: (id) => api.delete(`/orders/${id}`),
   updateStatus: (id, statusData) => api.patch(`/orders/${id}/status`, statusData),
+  cancel: (id, cancelData) => api.patch(`/orders/${id}/cancel`, cancelData),
 }
 
 // ============================================

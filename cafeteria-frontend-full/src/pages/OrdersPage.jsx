@@ -200,6 +200,26 @@ export const OrdersPage = () => {
     }
   }
 
+  const handleCancelOrder = async (orderId, orderNumber) => {
+    const reason = prompt(`¿Por qué deseas cancelar el pedido ${orderNumber}?`, 'Cancelado por el empleado')
+    if (!reason) return
+
+    setLoading(true)
+    setError('')
+
+    try {
+      await ordersAPI.cancel(orderId, {
+        cancelledBy: user?.username || 'Sistema',
+        reason: reason
+      })
+      await loadOrders()
+    } catch (err) {
+      setError(handleAPIError(err))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const getStatusData = (status) => {
     return ORDER_STATUSES.find(s => s.value === status) || ORDER_STATUSES[0]
   }
@@ -500,9 +520,9 @@ export const OrdersPage = () => {
                       </div>
                       <span
                         className="order-status-badge"
-                        style={{ backgroundColor: statusData.color }}
+                        style={{ backgroundColor: order.cancelled ? '#ef4444' : statusData.color }}
                       >
-                        {statusData.label}
+                        {order.cancelled ? '❌ CANCELADO' : statusData.label}
                       </span>
                     </div>
 
@@ -521,6 +541,20 @@ export const OrdersPage = () => {
                         <span className="detail-label">{paymentData.icon} Pago:</span>
                         <span className="detail-value">{paymentData.label}</span>
                       </div>
+                      {order.discountPercentage && (
+                        <div className="order-detail-row" style={{ color: '#10b981', fontWeight: 'bold' }}>
+                          <span className="detail-label">🎉 Descuento:</span>
+                          <span className="detail-value">
+                            {order.discountPercentage}% OFF (-${order.discountAmount?.toFixed(2)})
+                          </span>
+                        </div>
+                      )}
+                      {order.promotionDescription && (
+                        <div className="order-detail-row" style={{ color: '#10b981', fontSize: '0.9em' }}>
+                          <span className="detail-label"></span>
+                          <span className="detail-value">{order.promotionDescription}</span>
+                        </div>
+                      )}
                       <div className="order-detail-row">
                         <span className="detail-label">💰 Total:</span>
                         <span className="detail-value total">${order.totalAmount?.toFixed(2) || '0.00'}</span>
@@ -537,6 +571,12 @@ export const OrdersPage = () => {
                           <span className="detail-value">
                             {new Date(order.createdAt).toLocaleString('es-ES')}
                           </span>
+                        </div>
+                      )}
+                      {order.cancelled && order.cancelReason && (
+                        <div className="order-detail-row" style={{ color: '#ef4444', fontSize: '0.9em' }}>
+                          <span className="detail-label">❌ Razón:</span>
+                          <span className="detail-value">{order.cancelReason}</span>
                         </div>
                       )}
                     </div>
@@ -564,7 +604,7 @@ export const OrdersPage = () => {
                       </button>
                       
                       {/* Solo ADMIN/EMPLOYEE pueden gestionar estados */}
-                      {canManageOrders && canAdvance && (
+                      {canManageOrders && !order.cancelled && canAdvance && (
                         <button
                           className="button small primary"
                           onClick={() => handleUpdateStatus(order.id, order.status)}
@@ -574,8 +614,19 @@ export const OrdersPage = () => {
                         </button>
                       )}
 
+                      {/* Solo ADMIN/EMPLOYEE pueden cancelar pedidos PENDING */}
+                      {canManageOrders && !order.cancelled && order.status === 'PENDING' && (
+                        <button
+                          className="button small danger"
+                          onClick={() => handleCancelOrder(order.id, order.orderNumber || order.id?.substring(0, 8))}
+                          disabled={loading}
+                        >
+                          ❌ Cancelar Pedido
+                        </button>
+                      )}
+
                       {/* Notificación para clientes cuando está listo */}
-                      {isCustomer && order.status === 'READY' && (
+                      {isCustomer && !order.cancelled && order.status === 'READY' && (
                         <div className="ready-indicator" style={{ 
                           animation: 'pulse 2s infinite',
                           backgroundColor: '#10b981',
@@ -588,9 +639,21 @@ export const OrdersPage = () => {
                         </div>
                       )}
 
-                      {order.status === 'DELIVERED' && (
+                      {order.status === 'DELIVERED' && !order.cancelled && (
                         <div className="delivered-indicator">
                           ✔️ Completado
+                        </div>
+                      )}
+
+                      {order.cancelled && (
+                        <div className="cancelled-indicator" style={{
+                          backgroundColor: '#fee2e2',
+                          color: '#ef4444',
+                          padding: '8px 12px',
+                          borderRadius: '6px',
+                          fontWeight: 'bold'
+                        }}>
+                          ❌ Pedido cancelado
                         </div>
                       )}
                     </div>

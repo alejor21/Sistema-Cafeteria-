@@ -73,6 +73,11 @@ public class OrderService {
 
         order.setTotalAmount(total.doubleValue());
 
+        // Aplicar descuento para estudiantes frecuentes (5to pedido = 10% descuento)
+        if (order.getCustomerId() != null && !order.getCustomerId().isEmpty()) {
+            applyStudentDiscount(order);
+        }
+
         // Tiempo estimado muy simple
         int baseTime = 5;   // minutos base
         int perItem = 2;    // minutos por unidad
@@ -96,6 +101,29 @@ public class OrderService {
         order.getStatusHistory().add(firstChange);
 
         return orderRepository.save(order);
+    }
+
+    // Aplicar descuento a estudiantes frecuentes
+    private void applyStudentDiscount(Order order) {
+        // Contar pedidos completados del cliente
+        List<Order> customerOrders = orderRepository.findAll().stream()
+                .filter(o -> order.getCustomerId().equals(o.getCustomerId()))
+                .filter(o -> o.getStatus() == OrderStatus.DELIVERED)
+                .filter(o -> !o.isCancelled())
+                .toList();
+
+        int completedOrders = customerOrders.size();
+
+        // Cada 5 pedidos completados = 10% descuento en el siguiente
+        if ((completedOrders + 1) % 5 == 0) {
+            double discountPercentage = 10.0;
+            double discountAmount = order.getTotalAmount() * (discountPercentage / 100.0);
+            
+            order.setDiscountPercentage(discountPercentage);
+            order.setDiscountAmount(discountAmount);
+            order.setTotalAmount(order.getTotalAmount() - discountAmount);
+            order.setPromotionDescription("🎉 Descuento estudiante frecuente: " + discountPercentage + "% OFF");
+        }
     }
 
     // Generar número de pedido único (ORD-20231124-001)
@@ -211,6 +239,26 @@ public class OrderService {
         if (newStatus == OrderStatus.READY) {
             order.setEstimatedTimeMinutes(0);
         }
+
+        return orderRepository.save(order);
+    }
+
+    // Cancelar pedido (solo PENDING)
+    public Order cancelOrder(String orderId, String cancelledBy, String reason) {
+        Order order = findById(orderId);
+
+        if (order.getStatus() != OrderStatus.PENDING) {
+            throw new IllegalStateException("Solo se pueden cancelar pedidos en estado PENDING");
+        }
+
+        if (order.isCancelled()) {
+            throw new IllegalStateException("El pedido ya está cancelado");
+        }
+
+        order.setCancelled(true);
+        order.setCancelledBy(cancelledBy);
+        order.setCancelReason(reason);
+        order.setUpdatedAt(Instant.now());
 
         return orderRepository.save(order);
     }
