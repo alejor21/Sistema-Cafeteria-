@@ -141,7 +141,8 @@ export const OrdersPage = () => {
     try {
       const orderData = {
         ...orderForm,
-        items: cart
+        items: cart,
+        employeeId: user?.id || 'guest' // Asignar empleado que crea el pedido
       }
 
       await ordersAPI.create(orderData)

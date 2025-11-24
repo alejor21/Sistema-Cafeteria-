@@ -13,6 +13,18 @@ export const Navbar = () => {
 
   const isActive = (path) => location.pathname === path
 
+  const getRoleDisplay = (role) => {
+    const roles = {
+      'ADMIN': { icon: '⚙️', label: 'Administrador' },
+      'EMPLOYEE': { icon: '👤', label: 'Empleado' },
+      'STUDENT': { icon: '🎓', label: 'Estudiante' },
+      'STAFF': { icon: '👔', label: 'Personal Campus' }
+    }
+    return roles[role] || { icon: '👤', label: role }
+  }
+
+  const roleInfo = user ? getRoleDisplay(user.role) : null
+
   return (
     <nav className="navbar">
       <div className="navbar-container">
@@ -66,10 +78,10 @@ export const Navbar = () => {
           {user ? (
             <>
               <div className="user-info">
-                <span className="user-icon">👤</span>
+                <span className="user-icon">{roleInfo.icon}</span>
                 <div className="user-details">
                   <span className="user-name">{user.fullName || user.username}</span>
-                  <span className="user-role">{user.role}</span>
+                  <span className="user-role">{roleInfo.label}</span>
                 </div>
               </div>
               <button className="btn-logout" onClick={handleLogout}>

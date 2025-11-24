@@ -56,6 +56,12 @@ public class OrderService {
         order.setUpdatedAt(now);
         order.setStatus(OrderStatus.PENDING);
 
+        // Generar número de pedido único
+        order.setOrderNumber(generateOrderNumber());
+
+        // Calcular y asignar turno automáticamente
+        order.setShift(calculateShift(now));
+
         if (order.getItems() == null) {
             order.setItems(new ArrayList<>());
         }
@@ -90,6 +96,34 @@ public class OrderService {
         order.getStatusHistory().add(firstChange);
 
         return orderRepository.save(order);
+    }
+
+    // Generar número de pedido único (ORD-20231124-001)
+    private String generateOrderNumber() {
+        Instant now = Instant.now();
+        String datePart = now.toString().substring(0, 10).replace("-", "");
+        
+        // Contar pedidos del día para generar secuencial
+        Instant startOfDay = now.truncatedTo(java.time.temporal.ChronoUnit.DAYS);
+        Instant endOfDay = startOfDay.plus(1, java.time.temporal.ChronoUnit.DAYS);
+        
+        long todayCount = orderRepository.findByCreatedAtBetween(startOfDay, endOfDay).size();
+        String sequential = String.format("%03d", todayCount + 1);
+        
+        return "ORD-" + datePart + "-" + sequential;
+    }
+
+    // Calcular turno basado en la hora
+    private String calculateShift(Instant time) {
+        int hour = time.atZone(java.time.ZoneId.systemDefault()).getHour();
+        
+        if (hour >= 6 && hour < 14) {
+            return "MAÑANA";
+        } else if (hour >= 14 && hour < 22) {
+            return "TARDE";
+        } else {
+            return "NOCHE";
+        }
     }
 
     // Editar pedido solo si está en PENDING (HU004)
