@@ -18,6 +18,17 @@ const PAYMENT_METHODS = [
   { value: 'ONLINE', label: 'En Línea', icon: '📱' }
 ]
 
+// Función helper para obtener info del rol
+const getRoleDisplay = (role) => {
+  const roles = {
+    'ADMIN': { icon: '⚙️', label: 'Administrador' },
+    'EMPLOYEE': { icon: '👤', label: 'Empleado' },
+    'STUDENT': { icon: '🎓', label: 'Estudiante' },
+    'STAFF': { icon: '👔', label: 'Personal Campus' }
+  }
+  return roles[role] || { icon: '👤', label: role }
+}
+
 export const OrdersPage = () => {
   const [view, setView] = useState('list') // 'list' o 'create'
   const [orders, setOrders] = useState([])
@@ -142,6 +153,9 @@ export const OrdersPage = () => {
       const orderData = {
         ...orderForm,
         items: cart,
+        // Si es cliente (STUDENT/STAFF), usar su propio ID como customerId
+        customerId: isCustomer ? user?.id : orderForm.customerId,
+        customerName: isCustomer ? user?.fullName || user?.username : orderForm.customerName,
         employeeId: user?.id || 'guest' // Asignar empleado que crea el pedido
       }
 
@@ -250,33 +264,47 @@ export const OrdersPage = () => {
           <form onSubmit={handleCreateOrder}>
             {/* Información del cliente */}
             <div className="form-section">
-              <h3 className="form-section-title">📝 Información del Cliente</h3>
+              <h3 className="form-section-title">📝 Información del Pedido</h3>
+              
+              {/* Solo mostrar campos de cliente si NO es estudiante/personal */}
+              {!isCustomer && (
+                <div className="form-grid">
+                  <label className="label">
+                    Nombre del cliente *
+                    <input
+                      type="text"
+                      name="customerName"
+                      className="input"
+                      value={orderForm.customerName}
+                      onChange={handleOrderFormChange}
+                      placeholder="Ej: Juan Pérez"
+                      required
+                    />
+                  </label>
+
+                  <label className="label">
+                    Identificación
+                    <input
+                      type="text"
+                      name="customerId"
+                      className="input"
+                      value={orderForm.customerId}
+                      onChange={handleOrderFormChange}
+                      placeholder="Opcional"
+                    />
+                  </label>
+                </div>
+              )}
+              
+              {/* Mostrar info del cliente si es estudiante/personal */}
+              {isCustomer && (
+                <div className="customer-info-display">
+                  <p><strong>Cliente:</strong> {user?.fullName || user?.username}</p>
+                  <p><strong>Tipo:</strong> {getRoleDisplay(user?.role).label}</p>
+                </div>
+              )}
+
               <div className="form-grid">
-                <label className="label">
-                  Nombre del cliente *
-                  <input
-                    type="text"
-                    name="customerName"
-                    className="input"
-                    value={orderForm.customerName}
-                    onChange={handleOrderFormChange}
-                    placeholder="Ej: Juan Pérez"
-                    required
-                  />
-                </label>
-
-                <label className="label">
-                  Identificación
-                  <input
-                    type="text"
-                    name="customerId"
-                    className="input"
-                    value={orderForm.customerId}
-                    onChange={handleOrderFormChange}
-                    placeholder="Opcional"
-                  />
-                </label>
-
                 <label className="label">
                   Método de pago *
                   <select
