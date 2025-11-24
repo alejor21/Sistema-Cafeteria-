@@ -266,8 +266,21 @@ export const OrdersPage = () => {
             <div className="form-section">
               <h3 className="form-section-title">📝 Información del Pedido</h3>
               
-              {/* Solo mostrar campos de cliente si NO es estudiante/personal */}
-              {!isCustomer && (
+              {/* STUDENT/STAFF: auto-llenar con sus datos */}
+              {isCustomer && (
+                <div className="customer-info-display" style={{
+                  backgroundColor: '#f3f4f6',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  marginBottom: '16px'
+                }}>
+                  <p><strong>Cliente:</strong> {user?.fullName || user?.username}</p>
+                  <p><strong>Tipo:</strong> {getRoleDisplay(user?.role).label}</p>
+                </div>
+              )}
+              
+              {/* ADMIN/EMPLOYEE: pueden ingresar datos del cliente manualmente */}
+              {canManageOrders && (
                 <div className="form-grid">
                   <label className="label">
                     Nombre del cliente *
@@ -283,24 +296,16 @@ export const OrdersPage = () => {
                   </label>
 
                   <label className="label">
-                    Identificación
+                    Identificación del cliente
                     <input
                       type="text"
                       name="customerId"
                       className="input"
                       value={orderForm.customerId}
                       onChange={handleOrderFormChange}
-                      placeholder="Opcional"
+                      placeholder="ID o código del cliente"
                     />
                   </label>
-                </div>
-              )}
-              
-              {/* Mostrar info del cliente si es estudiante/personal */}
-              {isCustomer && (
-                <div className="customer-info-display">
-                  <p><strong>Cliente:</strong> {user?.fullName || user?.username}</p>
-                  <p><strong>Tipo:</strong> {getRoleDisplay(user?.role).label}</p>
                 </div>
               )}
 
