@@ -1,46 +1,19 @@
 package com.example.cafeteria.config;
 
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-
-import java.util.Arrays;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
-public class CorsConfig {
+public class CorsConfig implements WebMvcConfigurer {
 
-    @Bean
-    public CorsFilter corsFilter() {
-        CorsConfiguration config = new CorsConfiguration();
-        
-        // Permitir credenciales
-        config.setAllowCredentials(true);
-        
-        // Permitir estos orígenes (frontend de Vercel y localhost para desarrollo)
-        config.setAllowedOriginPatterns(Arrays.asList(
-            "https://*.vercel.app",
-            "http://localhost:*",
-            "http://127.0.0.1:*"
-        ));
-        
-        // Permitir todos los headers
-        config.addAllowedHeader("*");
-        
-        // Permitir todos los métodos HTTP
-        config.addAllowedMethod("*");
-        
-        // Exponer estos headers en las respuestas
-        config.setExposedHeaders(Arrays.asList(
-            "Authorization",
-            "Content-Type",
-            "Accept"
-        ));
-        
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", config);
-        
-        return new CorsFilter(source);
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/api/**")
+                .allowedOriginPatterns("*")
+                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                .allowedHeaders("*")
+                .allowCredentials(true)
+                .maxAge(3600);
     }
 }
